@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>מחשבון הפרשה חודשית לחשבונות</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f9f9fb;
+      color: #133557;
+      padding: 2rem;
+      max-width: 700px;
+      margin: auto;
+      line-height: 1.6;
+    }
+
+    h1 {
+      text-align: center;
+      color: #133557;
+      font-size: 2rem;
+      margin-bottom: 1rem;
+    }
+
+    form {
+      background: #ffffff;
+      padding: 1.5rem;
+      border-radius: 16px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+      border: 1px solid #e0e6ed;
+    }
+
+    fieldset {
+      margin-bottom: 1rem;
+      border: none;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 0.4rem;
+      font-weight: 600;
+      color: #133557;
+      font-size: 0.9rem;
+    }
+
+    input,
+    select {
+      width: 100%;
+      padding: 0.5rem 0.7rem;
+      margin-bottom: 0.8rem;
+      border: 1px solid #d5dbe2;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      background: #fff;
+    }
+
+    .date-range {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      margin-bottom: 0.8rem;
+    }
+
+    button {
+      background: #fe821f;
+      color: white;
+      padding: 0.6rem 1.2rem;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: bold;
+      margin-top: 0.5rem;
+      margin-inline-end: 0.5rem;
+    }
+
+    button:hover {
+      background: #e76f1a;
+    }
+
+    .account-block {
+      background: #f4f7fb;
+      border: 1px solid #dce3ec;
+      padding: 0.8rem;
+      border-radius: 12px;
+      margin-bottom: 0.8rem;
+    }
+
+    #result {
+      margin-top: 2rem;
+      background: #fff;
+      padding: 1.2rem;
+      border-radius: 12px;
+      border: 1px solid #e0e6ed;
+      font-size: 1.05rem;
+      color: #133557;
+    }
+
+    .logo-container {
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+
+    .logo-img {
+      max-width: 150px;
+    }
+
+    .summary-list {
+      margin-top: 1rem;
+      padding-right: 1rem;
+    }
+
+    .summary-list li {
+      margin-bottom: 0.3rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="logo-container">
+    <img src="shekel90_transparent.png" alt="לוגו שקל 90" class="logo-img" />
+  </div>
+
+  <h1>מחשבון הפרשה חודשית לחשבונות</h1>
+
+  <p style="margin-bottom: 2rem;">
+    המחשבון הבא עוזר לחשב כמה יש להפריש בכל חודש לחשבונות תקופתיים (כמו מים, חשמל, ארנונה וכו').
+    מלאו את הסכום ששילמתם, והתקופה שאליה מתייחס החשבון, והמחשבון יחשב את העלות החודשית.
+    ניתן להוסיף כמה חשבונות שתרצו לפי הצורך.
+	(חודש = 30 יום)
+  </p>
+
+  <form id="billForm">
+    <div id="accountsContainer"></div>
+    <button type="button" onclick="addAccount()">➕ הוסף חשבון</button>
+    <button type="submit">חשב הפרשה חודשית</button>
+  </form>
+
+  <div id="result"></div>
+
+  <script>
+    let accountId = 0;
+
+    function addAccount() {
+      const container = document.getElementById('accountsContainer');
+      const id = accountId++;
+
+      const block = document.createElement('div');
+      block.className = 'account-block';
+      block.innerHTML = `
+        <fieldset>
+          <label>🏷️ סוג חשבון:</label>
+          <select name="type-${id}">
+            <option value="מים">מים</option>
+            <option value="חשמל">חשמל</option>
+            <option value="גז">גז</option>
+            <option value="ארנונה">ארנונה</option>
+            <option value="אחר">אחר</option>
+          </select>
+        </fieldset>
+
+        <fieldset>
+          <label>📅 החשבון בעבור התקופה:</label>
+          <div class="date-range">
+            <input type="date" name="start-${id}" required />
+            <span>עד</span>
+            <input type="date" name="end-${id}" required />
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <label>💰 סכום חשבון (₪):</label>
+          <input type="number" name="amount-${id}" step="0.01" required />
+        </fieldset>
+      `;
+      container.appendChild(block);
+    }
+
+    function calculateMonthlyProvision(accounts) {
+  let total = 0;
+  const breakdown = {};
+
+  accounts.forEach(acc => {
+    const start = new Date(acc.start);
+    const end = new Date(acc.end);
+    const days = Math.floor((end - start) / (1000 * 60 * 60 * 24)) + 1;
+
+    if (days <= 0) return;
+
+    const daily = acc.amount / days;
+    const monthly = daily * 30;
+    total += monthly;
+
+    if (!breakdown[acc.type]) breakdown[acc.type] = 0;
+    breakdown[acc.type] += monthly;
+  });
+
+  return {
+    total: total.toFixed(2),
+    breakdown
+  };
+}
+
+
+    document.getElementById('billForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const blocks = document.querySelectorAll('.account-block');
+      const accounts = [];
+
+      for (const block of blocks) {
+        const type = block.querySelector('select').value;
+        const amount = parseFloat(block.querySelector('input[type="number"]').value);
+        const start = block.querySelectorAll('input[type="date"]')[0].value;
+        const end = block.querySelectorAll('input[type="date"]')[1].value;
+
+        if (!amount || !start || !end) continue;
+
+        accounts.push({ type, amount, start, end });
+      }
+
+      if (accounts.length === 0) {
+        document.getElementById('result').innerHTML = `<p>🛑 יש להזין לפחות חשבון אחד תקין.</p>`;
+        return;
+      }
+
+      const result = calculateMonthlyProvision(accounts);
+
+      let breakdownHtml = `<ul class="summary-list">`;
+      for (const [type, amount] of Object.entries(result.breakdown)) {
+        breakdownHtml += `<li>${type}: ${amount.toFixed(2)} ₪</li>`;
+      }
+      breakdownHtml += `</ul>`;
+
+      document.getElementById('result').innerHTML = `
+        <p><b>💡 הפרשה חודשית רצויה: ${result.total} ₪</b></p>
+        <p>בעבור:</p>
+        ${breakdownHtml}
+      `;
+    });
+
+    // הוספת שורת חשבון ראשונה כברירת מחדל
+    addAccount();
+  </script>
+</body>
+</html>
